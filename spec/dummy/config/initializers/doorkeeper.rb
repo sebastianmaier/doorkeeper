@@ -1,6 +1,6 @@
 Doorkeeper.configure do
   # Change the ORM that doorkeeper will use
-  # Currently supported => :active_record, :mongoid
+  # Currently supported => :active_record, :mongoid, :mongo_mapper
   orm DOORKEEPER_ORM
 
   # This block will be called to check whether the
@@ -51,4 +51,12 @@ Doorkeeper.configure do
   # fallsback to `:access_token` or `:bearer_token` from `params` object
   # Check out the wiki for mor information on customization
   # access_token_methods :from_bearer_authorization, :from_access_token_param, :from_bearer_param
+
+
+  # Change the test redirect uri for client apps
+  # When clients register with the following redirect uri, they won't be redirected to any server and the authorization code will be displayed within the provider
+  # The value can be any string. Use nil to disable this feature. When disabled, clients must provide a valid URL
+  # (Similar behaviour: https://developers.google.com/accounts/docs/OAuth2InstalledApp#choosingredirecturi)
+  #
+  # test_redirect_uri 'urn:ietf:wg:oauth:2.0:oob'
 end

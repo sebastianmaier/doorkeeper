@@ -1,47 +1,58 @@
-class Doorkeeper::AuthorizationsController < Doorkeeper::ApplicationController
-  before_filter :authenticate_resource_owner!
+module Doorkeeper
+  class AuthorizationsController < ::Doorkeeper::ApplicationController
+    before_filter :authenticate_resource_owner!
 
-  def new
-    if authorization.valid?
-      if authorization.access_token_exists?
-        authorization.authorize
-        redirect_to authorization.success_redirect_uri
+    def new
+      if authorization.valid?
+        if authorization.access_token_exists?
+          auth = authorization.authorize
+          if authorization.success_redirect_uri.present?
+            redirect_to authorization.success_redirect_uri
+          else
+            redirect_to oauth_authorization_code_path(:code => auth.token)
+          end
+        end
+      elsif authorization.redirect_on_error?
+        redirect_to authorization.invalid_redirect_uri
+      else
+        @error = authorization.error_response.body
+        render :error
       end
-    elsif authorization.redirect_on_error?
-      redirect_to authorization.invalid_redirect_uri
-    else
-      @error = authorization.error_response
-      render :error
+    rescue Errors::DoorkeeperError => e
+      handle_authorization_exception e
     end
-  end
 
-  def create
-    if authorization.authorize
-      redirect_to authorization.success_redirect_uri
-    elsif authorization.redirect_on_error?
-      redirect_to authorization.invalid_redirect_uri
-    else
-      @error = authorization.error_response
-      render :error
+    def show
     end
-  end
 
-  def destroy
-    authorization.deny
-    redirect_to authorization.invalid_redirect_uri
-  end
+    def create
+      if auth = authorization.authorize
+        if authorization.success_redirect_uri.present?
+          redirect_to authorization.success_redirect_uri
+        else
+          redirect_to oauth_authorization_code_path(:code => auth.token)
+        end
+      elsif authorization.redirect_on_error?
+        redirect_to authorization.invalid_redirect_uri
+      else
+        @error = authorization.error_response
+        render :error
+      end
+    end
+
+    def destroy
+      authorization.deny
+      redirect_to authorization.invalid_redirect_uri
+    end
 
   private
 
-  def authorization_params
-    params.has_key?(:authorization) ? params[:authorization] : params
-  end
+    def authorization
+      @authorization ||= strategy.request
+    end
 
-  def client
-    @client ||= Doorkeeper::OAuth::Client.find(authorization_params[:client_id])
-  end
-
-  def authorization
-    @authorization ||= Doorkeeper::OAuth::AuthorizationRequest.new(client, current_resource_owner, authorization_params)
+    def strategy
+      @strategy ||= server.authorization_request params[:response_type]
+    end
   end
 end

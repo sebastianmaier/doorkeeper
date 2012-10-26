@@ -21,6 +21,18 @@ feature 'Authorization Code Flow' do
     url_should_not_have_param("error")
   end
 
+  scenario 'resource owner authorizes using test url' do
+    @client.redirect_uri = Doorkeeper.configuration.test_redirect_uri
+    @client.save!
+    visit authorization_endpoint_url(:client => @client)
+    click_on "Authorize"
+
+    access_grant_should_exist_for(@client, @resource_owner)
+
+    i_should_see 'Authorization code:'
+    i_should_see Doorkeeper::AccessGrant.first.token
+  end
+
   scenario 'resource owner authorizes the client with state parameter set' do
     visit authorization_endpoint_url(:client => @client, :state => "return-me")
     click_on "Authorize"
@@ -69,8 +81,6 @@ feature 'Authorization Code Flow' do
     should_have_json 'access_token', Doorkeeper::AccessToken.first.token
     should_have_json 'token_type',   "bearer"
     should_have_json 'expires_in',   Doorkeeper::AccessToken.first.expires_in
-
-    should_not_have_json 'refresh_token'
   end
 
   context 'with scopes' do

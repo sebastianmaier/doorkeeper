@@ -1,5 +1,5 @@
 module Doorkeeper
   class ApplicationController < ActionController::Base
-    include Doorkeeper::Helpers::Controller
+    include Helpers::Controller
   end
 end

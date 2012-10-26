@@ -3,18 +3,25 @@ require "doorkeeper/engine"
 require "doorkeeper/config"
 require "doorkeeper/doorkeeper_for"
 
+require 'doorkeeper/errors'
+require 'doorkeeper/server'
+require 'doorkeeper/request'
+
 module Doorkeeper
   autoload :Validations, "doorkeeper/validations"
 
   module OAuth
     autoload :Scopes,                     "doorkeeper/oauth/scopes"
     autoload :Error,                      "doorkeeper/oauth/error"
+    autoload :TokenResponse,              "doorkeeper/oauth/token_response"
     autoload :ErrorResponse,              "doorkeeper/oauth/error_response"
-    autoload :AuthorizationRequest,       "doorkeeper/oauth/authorization_request"
-    autoload :AccessTokenRequest,         "doorkeeper/oauth/access_token_request"
+    autoload :AuthorizationCodeRequest,   "doorkeeper/oauth/authorization_code_request"
+    autoload :RefreshTokenRequest,        "doorkeeper/oauth/refresh_token_request"
     autoload :PasswordAccessTokenRequest, "doorkeeper/oauth/password_access_token_request"
     autoload :ClientCredentialsRequest,   "doorkeeper/oauth/client_credentials_request"
     autoload :Authorization,              "doorkeeper/oauth/authorization"
+    autoload :CodeRequest,                "doorkeeper/oauth/code_request"
+    autoload :TokenRequest,               "doorkeeper/oauth/token_request"
     autoload :Client,                     "doorkeeper/oauth/client"
     autoload :Token,                      "doorkeeper/oauth/token"
 

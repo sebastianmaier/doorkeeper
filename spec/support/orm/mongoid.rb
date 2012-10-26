@@ -2,7 +2,7 @@ DatabaseCleaner[:mongoid].strategy = :truncation
 DatabaseCleaner[:mongoid].clean_with :truncation
 
 RSpec.configure do |config|
-  config.before :suite do
+  config.before do
     Doorkeeper::Application.create_indexes
     Doorkeeper::AccessGrant.create_indexes
     Doorkeeper::AccessToken.create_indexes
@@ -12,8 +12,14 @@ end
 module Doorkeeper
   class PlaceholderApplicationOwner
     include Mongoid::Document
+    include Doorkeeper::Models::Mongoid::VersionCheck
 
-    self.store_in :placeholder_application_owners
+    if is_mongoid_3_x?
+      self.store_in collection: :placeholder_application_owners
+    else
+      self.store_in :placeholder_application_owners
+    end
+
     has_many :applications
 
   end
