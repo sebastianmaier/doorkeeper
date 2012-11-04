@@ -3,7 +3,7 @@ class Doorkeeper::AuthorizationsController < Doorkeeper::ApplicationController
 
   def new
     if authorization.valid?
-      if authorization.access_token_exists?
+      if authorization.access_token_exists? || skip_authorization!
         authorization.authorize
         redirect_to authorization.success_redirect_uri
       end
