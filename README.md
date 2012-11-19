@@ -23,14 +23,16 @@ For more information about the supported features, check out the related [page i
 ### ORM
 
 - ActiveRecord
-- Mongoid 2 (only for doorkeeper v0.5+)
+- Mongoid 2
+- Mongoid 3
+- MongoMapper
 
 ## Installation
 
 Put this in your Gemfile:
 
 ``` ruby
-gem 'doorkeeper', '~> 0.5.0.rc1'
+gem 'doorkeeper', '~> 0.6.2'
 ```
 
 Run the installation generator with:
@@ -51,18 +53,26 @@ Don't forget to run the migration with:
 
     rake db:migrate
 
-### Mongoid (only doorkeeper v0.5+)
+### Mongoid / MongoMapper
 
-Doorkeeper currently supports Mongoid 2. To start using it, you have to set the `orm` configuration:
+Doorkeeper currently supports MongoMapper, Mongoid 2 and 3. To start using it, you have to set the `orm` configuration:
 
 ``` ruby
 Doorkeeper.configure do
-  orm :mongoid
+  orm :mongoid2 # or :mongoid3, :mongo_mapper
 end
 ```
 
-**Note:** Make sure you create indexes for doorkeeper models. You can do this either by running `db:mongoid:create_indexes`
-or by adding `autocreate_indexes: true` to your `config/mongoid.yml`
+#### Mongoid indexes
+
+Make sure you create indexes for doorkeeper models. You can do this either by running `rake db:mongoid:create_indexes` or (if you're using Mongoid 2) by adding `autocreate_indexes: true` to your `config/mongoid.yml`
+
+#### MongoMapper indexes
+
+Generate the `db/indexes.rb` file and create indexes for the doorkeeper models:
+
+    rails generate doorkeeper:mongo_mapper:indexes
+    rake db:index
 
 ### Routes
 
@@ -91,21 +101,25 @@ You need to configure Doorkeeper in order to provide resource_owner model and au
 
 ``` ruby
 Doorkeeper.configure do
-  resource_owner_authenticator do |routes|
-    current_user || redirect_to(routes.login_url) # returns nil if current_user is not logged in
+  resource_owner_authenticator do
+    User.find(session[:current_user_id]) || redirect_to(login_url)
   end
 end
 ```
 
-This block runs into the context of your Rails application, and it has access to `current_user` method, for example.
+This code is run in the context of your application so you have access to your models, session or routes helpers. However,
+since this code is not run in the context of your application's ApplicationController it doesn't have access
+to the methods defined over there.
 
 If you use [devise](https://github.com/plataformatec/devise), you may want to use warden to authenticate the block:
 
 ``` ruby
-resource_owner_authenticator do |routes|
+resource_owner_authenticator do
   current_user || warden.authenticate!(:scope => :user)
 end
 ```
+
+Side note: when using devise you have access to current_user as devise extends entire ActionController::Base with the current_#{mapping}.
 
 If you are not using devise, you may want to check other ways of authentication [here](https://github.com/applicake/doorkeeper/wiki/Authenticating-using-Clearance-DIY).
 
@@ -200,9 +214,52 @@ end
 
 In this example, we're returning the credentials (`me.json`) of the access token owner.
 
+### Applications list
+
+By default, the applications list (`/oauth/applications`) is public available. To protect the endpoint you should uncomment these lines:
+
+```ruby
+# config/initializers/doorkeeper.rb
+Doorkeeper.configure do
+  admin_authenticator do |routes|
+    Admin.find_by_id(session[:admin_id]) || redirect_to(routes.new_admin_session_url)
+  end
+end
+```
+
+The logic is the same as the `resource_owner_authenticator` block. **Note:** since the application list is just a scaffold, it's recommended to either customize the controller used by the list or skip the controller at all. For more information see the page [in the wiki](https://github.com/applicake/doorkeeper/wiki/Customizing-routes).
+
+## Other customizations
+
+- [Associate users to OAuth applications (ownership)](https://github.com/applicake/doorkeeper/wiki/Associate-users-to-OAuth-applications-%28ownership%29)
+- [CORS - Cross Origin Resource Sharing](https://github.com/applicake/doorkeeper/wiki/%5BCORS%5D-Cross-Origin-Resource-Sharing)
+
 ## Upgrading
 
 If you want to upgrade doorkeeper to a new version, check out the [upgrading notes](https://github.com/applicake/doorkeeper/wiki/Migration-from-old-versions) and take a look at the [changelog](https://github.com/applicake/doorkeeper/blob/master/CHANGELOG.md).
+
+### Development
+
+To run the local engine server:
+
+```
+rails=3.2.8 orm=active_record bundle install
+rails=3.2.8 orm=active_record bundle exec rails server
+````
+
+By default, it uses the latest Rails version with ActiveRecord. To run the tests:
+
+```
+rails=3.2.8 orm=active_record bundle exec rake
+```
+
+Or you might prefer to run `script/run_all` to integrate against all ORMs.
+
+### Contributing
+
+Want to contribute and don't know where to start? Check out [features we're missing](https://github.com/applicake/doorkeeper/wiki/Supported-Features), create [example apps](https://github.com/applicake/doorkeeper/wiki/Example-Applications), integrate the gem with your app and let us know!
+
+Also, check out our [contributing guidelines page](https://github.com/applicake/doorkeeper/wiki/Contributing).
 
 ## Other resources
 
@@ -222,32 +279,14 @@ Check out this screencast from [railscasts.com](http://railscasts.com/): [#353 O
 
 After you set up the provider, you may want to create a client application to test the integration. Check out these [client examples](https://github.com/applicake/doorkeeper/wiki/Example-Applications) in our wiki or follow this [tutorial here](https://github.com/applicake/doorkeeper/wiki/Testing-your-provider-with-OAuth2-gem).
 
-### Contributing/Development
-
-Want to contribute and don't know where to start? Check out [features we're missing](https://github.com/applicake/doorkeeper/wiki/Supported-Features), create [example apps](https://github.com/applicake/doorkeeper/wiki/Example-Applications), integrate the gem with your app and let us know!
-
-Also, check out our [contributing guidelines page](https://github.com/applicake/doorkeeper/wiki/Contributing).
-
 ### Supported ruby versions
 
 All supported ruby versions are [listed here](https://github.com/applicake/doorkeeper/wiki/Supported-Ruby-&-Rails-versions).
 
-## Additional information
-
-### Cross Origin Resource Sharing
-
-You might want to use Doorkeeper to protect an API and want an other application running in a different context (like a mobile application) to request on your API.
-
-For mobile application, you might have to setup Cross Origin Resource Sharing. More info [here](http://www.nczonline.net/blog/2010/05/25/cross-domain-ajax-with-cross-origin-resource-sharing/)
-
-In order to setup the bahavior, you can take a look at [rack-cors](https://github.com/cyu/rack-cors). It's a rack middleware that will set http headers for you in order to be able to make cross domain requests to your doorkeeper protected application (usualy your API).
-
-[Here](https://github.com/gottfrois/doorkeeper-provider-app) is a demo application where rack-cors has been setup.
-
 ### Maintainers
 
-- Felipe Elias Philipp ([github.com/felipeelias](https://github.com/felipeelias), [twitter.com/felipeelias](https://twitter.com/felipeelias))
-- Piotr Jakubowski ([github.com/piotrj](https://github.com/piotrj), [twitter.com/piotrjakubowski](https://twitter.com/piotrjakubowski))
+- Felipe Elias Philipp - [coderwall.com/felipeelias](http://coderwall.com/felipeelias)
+- Piotr Jakubowski - [coderwall.com/piotrj](http://coderwall.com/piotrj)
 
 ### Contributors
 

@@ -1,25 +1,21 @@
 Doorkeeper.configure do
   # Change the ORM that doorkeeper will use.
-  # Currently supported options are :active_record and :mongoid
+  # Currently supported options are :active_record, :mongoid2, :mongoid3, :mongo_mapper
   orm :active_record
 
   # This block will be called to check whether the resource owner is authenticated or not.
-  resource_owner_authenticator do |routes|
+  resource_owner_authenticator do
     raise "Please configure doorkeeper resource_owner_authenticator block located in #{__FILE__}"
     # Put your resource owner authentication logic here.
-    # If you want to use named routes from your app, you need to call them on the routes object.
-    # For example:
-    #   routes.new_user_session_path
     # Example implementation:
-    #   User.find_by_id(session[:user_id]) || redirect_to(routes.new_user_session_url)
+    #   User.find_by_id(session[:user_id]) || redirect_to(new_user_session_url)
   end
 
   # If you want to restrict access to the web interface for adding oauth authorized applications, you need to declare the block below.
-  # admin_authenticator do |routes|
+  # admin_authenticator do
   #   # Put your admin authentication logic here.
-  #   # If you want to use named routes from your app, you need to call them on routes object, e.g., routes.new_admin_session_path
   #   # Example implementation:
-  #   Admin.find_by_id(session[:admin_id]) || redirect_to(routes.new_admin_session_url)
+  #   Admin.find_by_id(session[:admin_id]) || redirect_to(new_admin_session_url)
   # end
 
   # Authorization Code expiration time (default 10 minutes).
@@ -54,4 +50,11 @@ Doorkeeper.configure do
   # falls back to the `:access_token` or `:bearer_token` params from the `params` object.
   # Check out the wiki for mor information on customization
   # access_token_methods :from_bearer_authorization, :from_access_token_param, :from_bearer_param
+
+  # Change the test redirect uri for client apps
+  # When clients register with the following redirect uri, they won't be redirected to any server and the authorization code will be displayed within the provider
+  # The value can be any string. Use nil to disable this feature. When disabled, clients must provide a valid URL
+  # (Similar behaviour: https://developers.google.com/accounts/docs/OAuth2InstalledApp#choosingredirecturi)
+  #
+  # test_redirect_uri 'urn:ietf:wg:oauth:2.0:oob'
 end

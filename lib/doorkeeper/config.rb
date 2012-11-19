@@ -139,13 +139,14 @@ module Doorkeeper
            :default => lambda{|routes| }
     option :resource_owner_from_credentials,
            :default => lambda{|routes|
-             logger.warn(I18n.translate('doorkeeper.errors.messages.credential_flow_not_configured'))
+             warn(I18n.translate('doorkeeper.errors.messages.credential_flow_not_configured'))
              nil
            }
     option :skip_authorization, :default => lambda{|routes|}
     option :access_token_expires_in,      :default => 7200
     option :authorization_code_expires_in,:default => 600
     option :orm, :default => :active_record
+    option :test_redirect_uri, :default => 'urn:ietf:wg:oauth:2.0:oob'
 
     def refresh_token_enabled?
       !!@refresh_token_enabled
@@ -169,6 +170,10 @@ module Doorkeeper
 
     def scopes
       @scopes ||= default_scopes + optional_scopes
+    end
+
+    def orm_name
+      [:mongoid2, :mongoid3].include?(orm) ? :mongoid : orm
     end
 
     def client_credentials_methods
