@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.2
+
+- bugfixes
+  - [#162] Remove ownership columns from base migration template [@rdsoze](https://github.com/rdsoze)
+
+## 0.6.1
+
+- bugfixes
+  - [#160] Removed |routes| argument from initializer authenticator blocks
+- documentation
+  - [#160] Fixed description of context of authenticator blocks
+
 ## 0.6.0
 
 - enhancements
@@ -12,6 +24,7 @@
   - [#150] Introduce test redirect uri for applications
 - bugfixes
   - [#157] Response token status should be `:ok`, not `:success` [@theycallmeswift](https://github.com/theycallmeswift)
+  - [#159] Remove ActionView::Base.field_error_proc override (fixes #145)
 - internals
   - Update development dependencies
   - Several refactorings
